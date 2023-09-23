@@ -42,15 +42,52 @@ function totalReactionsDuringCall(participant) {
   return participant["data"].filter((data) => data["type"] == "emoji").length;
 }
 
+function totalChatInteractions(participant) {
+  return participant["data"].filter((data) => data["type"] == "chat").length;
+}
+
 const btn = document.getElementById('download');
+const title = document.querySelector("#title");
+
+let data = {};
+let participants = [];
+
+(async () => {
+  const response = await fetch("meetings data/data3.json");
+  data = await response.json();
+  participants = data["participants"];
+
+  title.innerText = data["title"];
+
+  for (let part of participants) {
+    const container = document.querySelector(".container");
+
+    const [firstName, secondName] = part["name"].split(" ");
+    const talkNum = getTimeTalking(part);
+    const camNum = getTimeWithCameraOn(part);
+    const reactNum = totalReactionsDuringCall(part);
+    const chatNum = totalChatInteractions(part);
+
+    const timeTalking = milliToHHMMSS(talkNum);
+    const timeCameraOn = milliToHHMMSS(camNum);
+
+    container.innerHTML += `
+    <tr class="participant">
+      <td class="info">
+        <img class="avatar" src="${part["avatar"]}"/>
+        <span>${`${firstName} ${secondName}`}</span>
+      </td>
+      <td>${timeTalking}</td>
+      <td>${timeCameraOn}</td>
+      <td>${reactNum}</td>
+      <td>${chatNum}</td>
+    </tr>
+    `
+  }
+})()
 
 btn.addEventListener('click', async () => {
-  const response = await fetch("meetings data/timotej.json");
-  const data = await response.json();
-
   // const participants = data[0]["participants"];
-  const participants = data["participants"];
-
   const aggStats = [];
   for (let part of participants) {
     const talkNum = getTimeTalking(part);
@@ -69,7 +106,8 @@ btn.addEventListener('click', async () => {
       "Interaction (camera)": camNum > 30 * 60000,
       "Camera On During": timeCameraOn,
       "Interaction (emojis)": reactNum > 0,
-      "Total Reactions": totalReactionsDuringCall(part)
+      "Total Reactions": totalReactionsDuringCall(part),
+      "Total Chat Interactions": totalChatInteractions(part),
     });
   }
 
